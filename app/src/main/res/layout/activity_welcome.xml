@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    tools:context=".WelcomeActivity">
+
+    <android.view.View
+        android:layout_width="83dp"
+        android:layout_height="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/gojeklogo"></android.view.View>
+
+    <View
+        android:id="@+id/viewIcon"
+        android:layout_width="355dp"
+        android:layout_height="219dp"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/gojekicon" />
+
+    <TextView
+        android:id="@+id/tvWelcome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/viewIcon"
+        android:layout_marginLeft="20dp"
+        android:fontFamily="@font/mmbold"
+        android:text="@string/selamat_datang_di_gojek"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvDescWelcome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvWelcome"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="21dp"
+        android:textSize="13dp"
+        android:fontFamily="@font/mmregular"
+        android:text="@string/desc_1"
+        android:textColor="@color/black" />
+
+    <android.widget.Button
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@id/tvDescWelcome"
+        android:layout_centerHorizontal="true"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginBottom="15dp"
+        android:background="@drawable/custom_box"
+        android:fontFamily="@font/mmbold"
+        android:text="Log in"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="13sp" />
+
+    <android.widget.Button
+        android:id="@+id/btnRegister"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@id/btnLogin"
+        android:layout_centerHorizontal="true"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:background="@drawable/custon_box_register"
+        android:fontFamily="@font/mmregular"
+        android:text="@string/belum_ada_akun_daftar_dulu"
+        android:textAllCaps="false"
+        android:textColor="@color/dasar" />
+
+    <TextView
+        android:id="@+id/tvDescWelcome2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnRegister"
+        android:layout_marginLeft="12dp"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/mmregular"
+        android:text="@string/desc2"
+        android:textColor="@color/black"
+        android:textSize="10sp" />
+
+
+
+</RelativeLayout>

@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Gojay</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="selamat_datang_di_gojek">Welcome to GoJek!</string>
+    <string name="desc_1">An application that makes your life more comfortable. Ready to help your needs. Anytime anywhere</string>
+    <string name="belum_ada_akun_daftar_dulu">No account yet? Register first</string>
+    <string name="desc2">By logging in or registering, you agree to the Terms of Service and Privacy Policy</string>
+    <string name="masuk">Masuk</string>
+    <string name="silahkan_masuk_dengan_nomor_hp_mu_yang_terdaftar">Silahkan masuk dengan nomor HP-mu yang terdaftar</string>
+    <string name="nomor_hp">Nomor Hp*</string>
+    <string name="ada_kendala_dengan_nomor_hp_mu">Ada kendala dengan nomor HP-mu?</string>
+    <string name="_62">+84</string>
+    <string name="desc_otp">Kode OTP sudah dikirim!</string>
+    <string name="hint">X X X X</string>
+    <string name="otp_desc">Masukkan Kode OTP yang kami SMS ke nomor HP-mu yang terdaftar</string>
+    <string name="getNumber_null">null</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="promo_layout">Promo Layout</string>
+    <string name="riwayat_layout">Riwayat Layout</string>
+    <string name="chat_layout">Chat Layout</string>
+</resources>
