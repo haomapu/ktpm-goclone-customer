@@ -26,6 +26,9 @@ public class HomeFragment extends Fragment {
 
     private NotificationBadge shopping_badge;
 
+    private MapsFragment mapsFragment;
+
+
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -68,6 +71,12 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+
+        mapsFragment = new MapsFragment();
+        getChildFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, mapsFragment)
+                .commit();
+
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {

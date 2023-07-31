@@ -27,4 +27,5 @@
     <string name="promo_layout">Promo Layout</string>
     <string name="riwayat_layout">Riwayat Layout</string>
     <string name="chat_layout">Chat Layout</string>
+    <string name="google_maps_api_key">AIzaSyCCqm6B_WNT1UxOjt0InsHocTxT9QjgeAc</string>
 </resources>
