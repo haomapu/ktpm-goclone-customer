@@ -6,6 +6,7 @@ import androidx.fragment.app.Fragment;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.WindowManager;
 
@@ -14,6 +15,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class MainActivity extends AppCompatActivity {
 
     BottomNavigationView navigationView;
+    HomeFragment homeFragment;
+    PromoFragment promoFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,18 +24,26 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         navigationView = findViewById(R.id.bottom_navigation);
-        getSupportFragmentManager().beginTransaction().replace(R.id.body_container, new HomeFragment()).commit();
+        if (homeFragment == null){
+            homeFragment = new HomeFragment();
+        }
+        getSupportFragmentManager().beginTransaction().replace(R.id.body_container, homeFragment).commit();
         navigationView.setSelectedItemId(R.id.homeFragment);
-
         navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @SuppressLint("NonConstantResourceId")
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 Fragment fragment = null;
                 if (item.getItemId() == R.id.homeFragment) {
-                    fragment = new HomeFragment();
+                    if (homeFragment == null){
+                        homeFragment = new HomeFragment();
+                    }
+                    fragment = homeFragment;
                 } else if (item.getItemId() == R.id.promo_fragment) {
-                    fragment = new PromoFragment();
+                    if (promoFragment == null){
+                        promoFragment = new PromoFragment();
+                    }
+                    fragment = promoFragment;
                 } else if (item.getItemId() == R.id.riwayat) {
                     fragment = new HistoryFragment();
                 } else if (item.getItemId() == R.id.chat) {
@@ -60,5 +71,12 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState); // Call super to propagate the instance state to child fragments (including HomeFragment)
+        // Save the instance state data for the MainActivity...
+        Log.e("Hello", "Haomapu12");
+
     }
 }

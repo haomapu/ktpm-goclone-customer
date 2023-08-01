@@ -8,8 +8,10 @@ import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +26,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -64,8 +67,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private GeoApiContext geoApiContext;
 
     private LatLng currentLatLng;
+    private LatLng desLatLng;
     private double latitude, longitude;
-
+    Thread thread;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +86,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         View rootView = inflater.inflate(R.layout.fragment_maps, container, false);
 
         // Initialize the FusedLocationProviderClient
@@ -96,63 +101,47 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         sourceAutoCompleteTextView = rootView.findViewById(R.id.sourceAutoCompleteTextView);
         destinationAutoCompleteTextView = rootView.findViewById(R.id.destinationAutoCompleteTextView);
-        destinationAutoCompleteTextView.setFocusable(false);
-        destinationAutoCompleteTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                List<Place.Field> fieldList = Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME);
-                List<String> countries = Arrays.asList("VN");
-                double distanceInMeters = 5000; // 50 km radius from the center
-
-                LatLngBounds bounds = new LatLngBounds(
-                        new LatLng(latitude - distanceInMeters / 111700, longitude - distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))),
-                        new LatLng(longitude + distanceInMeters / 111700, longitude + distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))));
-
-                Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList).setCountries(countries).setLocationBias(RectangularBounds.newInstance(bounds)).build(getContext());
-                startActivityForResult(intent, 200);
-            }
-        });
+        initSearchTextView(sourceAutoCompleteTextView, 201);
+        initSearchTextView(destinationAutoCompleteTextView, 200);
 
         // Set the sourceAutoCompleteTextView to the current location at the first time
-        setCurrentLocationToSource();
-//        destinationAutoCompleteTextView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-//            @Override
-//            public void onFocusChange(View view, boolean b) {
-//                String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
-//                String destinationPlace = String.valueOf((destinationAutoCompleteTextView).getText());
-//                if (!sourcePlace.isEmpty() && !destinationPlace.isEmpty()) {
-//                    LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
-//                    LatLng destinationLatLng = getLocationFromAddress(destinationPlace);
-//                    if (sourceLatLng != null && destinationLatLng != null) {
-//                        drawDirections(sourceLatLng, destinationLatLng);
-//                    }
-//                }
-//            }
-//        });
-        destinationAutoCompleteTextView.addTextChangedListener(new TextWatcher() {
+
+        if (savedInstanceState != null) {
+            // Restore your data from the 'savedInstanceState' bundle
+            latitude = savedInstanceState.getDouble("srcLat");
+            longitude = savedInstanceState.getDouble("srcLng");
+            currentLatLng = new LatLng(latitude, longitude);
+            // Restore other necessary data...
+            Double desLat = savedInstanceState.getDouble("desLat");
+            Double desLng = savedInstanceState.getDouble("desLng");
+            desLatLng = new LatLng(desLat, desLng);
+            drawDirections(currentLatLng, desLatLng, "None");
+        }
+
+        if (currentLatLng == null){
+            setCurrentLocationToSource();
+        }
+        Handler handler = new Handler();
+
+        Runnable runnable = new Runnable() {
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            public void run() {
+                WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
+                    long delayMillis = 20000;
 
-            }
 
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
-                String destinationPlace = String.valueOf((destinationAutoCompleteTextView).getText());
-                if (!sourcePlace.isEmpty() && !destinationPlace.isEmpty()) {
-                    LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
-                    LatLng destinationLatLng = getLocationFromAddress(destinationPlace);
-                    if (sourceLatLng != null && destinationLatLng != null) {
-                        drawDirections(sourceLatLng, destinationLatLng, destinationPlace);
+                    if (! (websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
+                        LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
+                        String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
+                        LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
+                        drawDirections(sourceLatLng, latLng, "None");
                     }
-                }
+                    handler.postDelayed(this, delayMillis);
+
             }
-        });
+        };
+        handler.post(runnable);
+
         return rootView;
     }
 
@@ -162,6 +151,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         if (requestCode == 200 && resultCode == RESULT_OK) {
             Place place = Autocomplete.getPlaceFromIntent(data);
             destinationAutoCompleteTextView.setText(place.getAddress());
+        } else if (requestCode == 201 && resultCode == RESULT_OK) {
+            Place place = Autocomplete.getPlaceFromIntent(data);
+            sourceAutoCompleteTextView.setText(place.getAddress());
         }
     }
 
@@ -196,7 +188,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             });
         }
     }
-    
+
 
     private LatLng getLocationFromAddress(String address) {
         Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
@@ -214,8 +206,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private void drawDirections(LatLng sourceLatLng, LatLng destinationLatLng, String destinationTitle) {
         mMap.clear(); // Clear existing markers and polylines
-        mMap.addMarker(new MarkerOptions().position(sourceLatLng).title("Current Location")).showInfoWindow();
-        mMap.addMarker(new MarkerOptions().position(destinationLatLng).title(destinationTitle)).showInfoWindow();
+        mMap.addMarker(new MarkerOptions().position(sourceLatLng).title("Hi Location")).showInfoWindow();
+        if (!destinationTitle.equalsIgnoreCase("None")){
+            mMap.addMarker(new MarkerOptions().position(destinationLatLng).title(destinationTitle)).showInfoWindow();
+        } else {
+            mMap.addMarker(new MarkerOptions().position(destinationLatLng).title("Destination")).showInfoWindow();
+        }
 
         // Fetch directions and draw route
         fetchDirections(sourceLatLng, destinationLatLng);
@@ -265,9 +261,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             // Get the last known location (if available) and update the marker
             fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
                 if (location != null) {
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
-                    LatLng currentLatLng = new LatLng(latitude, longitude);
+                    if (currentLatLng == null) {
+                        double latitude = location.getLatitude();
+                        double longitude = location.getLongitude();
+                        currentLatLng = new LatLng(latitude, longitude);
+                    }
 
                     // Add a marker at the current location and move the camera
                     mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Current Location")).showInfoWindow();
@@ -321,9 +319,71 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    public AutoCompleteTextView initSearchTextView(AutoCompleteTextView autoCompleteTextView, int statusCode){
+        autoCompleteTextView.setFocusable(false);
+        autoCompleteTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                List<Place.Field> fieldList = Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME);
+                double distanceInMeters = 5000; // 50 km radius from the center
+
+                LatLngBounds bounds = new LatLngBounds(
+                        new LatLng(latitude - distanceInMeters / 111700, longitude - distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))),
+                        new LatLng(longitude + distanceInMeters / 111700, longitude + distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))));
+
+                Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList).setLocationBias(RectangularBounds.newInstance(bounds)).build(getContext());
+                startActivityForResult(intent, statusCode);
+            }
+        });
+        autoCompleteTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (destinationAutoCompleteTextView.getText() != null || sourceAutoCompleteTextView.getText() != null){
+                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
+                    String destinationPlace = String.valueOf((destinationAutoCompleteTextView).getText());
+                    if (!sourcePlace.isEmpty() && !destinationPlace.isEmpty()) {
+                        LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
+                        LatLng destinationLatLng = getLocationFromAddress(destinationPlace);
+                        if (sourceLatLng != null && destinationLatLng != null) {
+                            currentLatLng = sourceLatLng;
+                            desLatLng = destinationLatLng;
+                            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                            builder.include(sourceLatLng);
+                            builder.include(destinationLatLng);
+                            LatLngBounds bounds = builder.build();
+
+                            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 150);
+                            mMap.moveCamera(cameraUpdate);
+
+                            drawDirections(sourceLatLng, destinationLatLng, destinationPlace);
+                        }
+                    }
+                }
+            }
+        });
+        return autoCompleteTextView;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+    }
+
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mMap = null;
     }
+
+
 }

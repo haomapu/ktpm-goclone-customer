@@ -30,6 +30,11 @@ android {
     }
 }
 
+configurations {
+    cleanedAnnotations
+    implementation.exclude group: 'org.jetbrains' , module:'annotations'
+}
+
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.4.1'
@@ -52,4 +57,7 @@ dependencies {
     implementation 'com.google.maps:google-maps-services:0.17.0'
     implementation 'com.squareup.okhttp3:okhttp:3.14.7'
     implementation 'com.google.android.libraries.places:places:3.2.0'
+
+    implementation 'com.github.HertelDavid:StompedAndroidClient:1.0'
+
 }

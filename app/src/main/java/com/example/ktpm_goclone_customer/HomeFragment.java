@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,7 @@ public class HomeFragment extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+
 
     public HomeFragment() {
         // Required empty public constructor
@@ -71,17 +73,26 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-
-        mapsFragment = new MapsFragment();
+        if (mapsFragment == null){
+            mapsFragment = new MapsFragment();
+        }
         getChildFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, mapsFragment)
                 .commit();
 
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
+
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         shopping_badge = view.findViewById(R.id.shopping_badge);
         shopping_badge.setNumber(3);
+    }
+
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
     }
 }
