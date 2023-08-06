@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:elevation="3dp">
+
+
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        tools:ignore="MissingConstraints">
+
+        <LinearLayout
+            android:id="@+id/LinearImageView4"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_margin="10dp"
+            android:layout_weight="0.25"
+            android:background="@drawable/circle_green_background"
+            android:orientation="vertical"
+            tools:ignore="MissingConstraints">
+
+            <ImageView
+                android:id="@+id/imageView4"
+                android:paddingTop="3dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/ic_white_location" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/locationTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_toEndOf="@+id/LinearImageView4"
+            android:text="Location Title"
+            android:textColor="@color/black"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/locationDescript"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/locationTitle"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_toEndOf="@+id/LinearImageView4"
+            android:text="Location Description"
+            android:textColor="#757575"
+            android:textSize="18sp" />
+        <ImageView
+            android:id="@+id/tag_free"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            app:srcCompat="@drawable/ic_forward" />
+
+<!--        <View-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="1dp"-->
+<!--            android:layout_margin="16dp"-->
+<!--            android:background="@android:color/darker_gray"-->
+<!--            android:layout_below="@+id/locationDescript"-->
+<!--            android:layout_toEndOf="@+id/LinearImageView4"/>-->
+    </RelativeLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
