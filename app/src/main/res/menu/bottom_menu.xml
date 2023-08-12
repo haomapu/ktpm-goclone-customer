@@ -14,7 +14,7 @@
         android:title="History"
         android:icon="@drawable/ic_history"/>
     <item
-        android:id="@+id/riwayat"
+        android:id="@+id/profile"
         android:title="Profile"
         android:icon="@drawable/ic_account"/>
 
