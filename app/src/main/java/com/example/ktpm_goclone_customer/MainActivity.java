@@ -8,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.WindowManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -44,8 +43,8 @@ public class MainActivity extends AppCompatActivity {
                         promoFragment = new PromoFragment();
                     }
                     fragment = promoFragment;
-                } else if (item.getItemId() == R.id.riwayat) {
-                    fragment = new HistoryFragment();
+                } else if (item.getItemId() == R.id.profile) {
+                    fragment = new ProfileFragment();
                 } else if (item.getItemId() == R.id.chat) {
                     fragment = new ChatFragment();
                 }
