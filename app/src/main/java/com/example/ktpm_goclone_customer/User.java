@@ -9,6 +9,8 @@ public class User {
     private String email;
     private String password;
     private Set<ERole> roles = new HashSet<>();
+    public static User currentUser;
+    public double lat, lng;
     public User() {
     }
     public User(String username, String email, String password) {

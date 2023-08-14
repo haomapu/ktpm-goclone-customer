@@ -1,7 +1,5 @@
 package com.example.ktpm_goclone_customer;
 
-import static android.app.Activity.RESULT_OK;
-
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -12,16 +10,17 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -41,6 +40,8 @@ import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.RectangularBounds;
 import com.google.android.libraries.places.widget.Autocomplete;
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
@@ -56,7 +57,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-public class MapsFragment extends Fragment implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private FusedLocationProviderClient fusedLocationClient;
@@ -70,10 +71,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private LatLng desLatLng;
     private double latitude, longitude;
     Thread thread;
+    private LinearLayout mBottomSheetLayout;
+    private BottomSheetBehavior sheetBehavior;
+    private Button header_Arrow_Image;
+    private CoordinatorLayout coordinatorLayout;
+    private LinearLayout confirm_button;
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Places.initialize(requireContext(), getString(R.string.google_maps_api_key));
+        setContentView(R.layout.activity_maps);
+        Places.initialize(this, getString(R.string.google_maps_api_key));
 
         // Initialize the GeoApiContext
         geoApiContext = new GeoApiContext.Builder()
@@ -81,31 +88,22 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                 .queryRateLimit(3)
                 .retryTimeout(1000, TimeUnit.MILLISECONDS)
                 .build();
-    }
-
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-
-        View rootView = inflater.inflate(R.layout.fragment_maps, container, false);
 
         // Initialize the FusedLocationProviderClient
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
-
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        coordinatorLayout = findViewById(R.id.coordinatorLayout);
         // Get the SupportMapFragment and register for map callback
-        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
         // Initialize UI elements
+        sourceAutoCompleteTextView = findViewById(R.id.sourceAutoCompleteTextView);
+        destinationAutoCompleteTextView = findViewById(R.id.destinationAutoCompleteTextView);
 
-        sourceAutoCompleteTextView = rootView.findViewById(R.id.sourceAutoCompleteTextView);
-        destinationAutoCompleteTextView = rootView.findViewById(R.id.destinationAutoCompleteTextView);
         initSearchTextView(sourceAutoCompleteTextView, 201);
         initSearchTextView(destinationAutoCompleteTextView, 200);
 
         // Set the sourceAutoCompleteTextView to the current location at the first time
-
         if (savedInstanceState != null) {
             // Restore your data from the 'savedInstanceState' bundle
             latitude = savedInstanceState.getDouble("srcLat");
@@ -118,35 +116,47 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             drawDirections(currentLatLng, desLatLng, "None");
         }
 
-        if (currentLatLng == null){
+        if (currentLatLng == null) {
             setCurrentLocationToSource();
         }
-        Handler handler = new Handler();
 
+        Handler handler = new Handler();
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
-                    long delayMillis = 20000;
+                long delayMillis = 20000;
 
-
-                    if (! (websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
-                        LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
-                        String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
-                        LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
-                        drawDirections(sourceLatLng, latLng, "None");
-                    }
-                    handler.postDelayed(this, delayMillis);
-
+                if (!(websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
+                    LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
+                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
+                    LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
+                    drawDirections(sourceLatLng, latLng, "None");
+                }
+                handler.postDelayed(this, delayMillis);
             }
         };
         handler.post(runnable);
+        mBottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
+        sheetBehavior = BottomSheetBehavior.from(mBottomSheetLayout);
+        sheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+            }
 
-        return rootView;
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
+        });
+
+        confirm_button.setOnClickListener(v -> {
+
+        });
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 200 && resultCode == RESULT_OK) {
             Place place = Autocomplete.getPlaceFromIntent(data);
@@ -159,19 +169,21 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private void setCurrentLocationToSource() {
         // Check for location permissions
-        if (ActivityCompat.checkSelfPermission(requireContext(),
+        if (ActivityCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
             // Get the last known location (if available) and update the marker
             fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
                 if (location != null) {
-                    latitude = location.getLatitude();
+                    User.currentUser.lat = location.getLatitude();
+                    User.currentUser.lng = location.getLongitude();
                     longitude = location.getLongitude();
+                    latitude = location.getLatitude();
+
                     currentLatLng = new LatLng(latitude, longitude);
                     // Add a marker at the current location and move the camera
 
-
-                    Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                     try {
                         List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
                         if (!addresses.isEmpty()) {
@@ -189,9 +201,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-
     private LatLng getLocationFromAddress(String address) {
-        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
             List<Address> addresses = geocoder.getFromLocationName(address, 1);
             if (!addresses.isEmpty()) {
@@ -229,6 +240,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             if (result != null && result.routes != null && result.routes.length > 0) {
                 DirectionsRoute route = result.routes[0];
                 List<com.google.maps.model.LatLng> decodedPath = route.overviewPolyline.decodePath();
+                int travelTimeSeconds = (int) route.legs[0].duration.inSeconds;
+
                 List<LatLng> newDecodedPath = new ArrayList<>();
 
                 for (com.google.maps.model.LatLng latLng : decodedPath) {
@@ -246,13 +259,76 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             e.printStackTrace();
         }
     }
-    // Implement onMapReady() to handle map initialization
+
+    public AutoCompleteTextView initSearchTextView(AutoCompleteTextView autoCompleteTextView, int statusCode){
+        autoCompleteTextView.setFocusable(false);
+        autoCompleteTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                List<Place.Field> fieldList = Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME);
+                double distanceInMeters = 5000; // 50 km radius from the center
+
+                LatLngBounds bounds = new LatLngBounds(
+                        new LatLng(latitude - distanceInMeters / 111700, longitude - distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))),
+                        new LatLng(longitude + distanceInMeters / 111700, longitude + distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))));
+
+                Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList).setLocationBias(RectangularBounds.newInstance(bounds)).build(MapsActivity.this);
+                startActivityForResult(intent, statusCode);
+            }
+        });
+        autoCompleteTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+//                if (sheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+//                } else {
+//                    sheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+//                }
+                if (destinationAutoCompleteTextView.getText() != null || sourceAutoCompleteTextView.getText() != null){
+
+                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
+                    String destinationPlace = String.valueOf((destinationAutoCompleteTextView).getText());
+                    if (!sourcePlace.isEmpty() && !destinationPlace.isEmpty()) {
+                        LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
+                        LatLng destinationLatLng = getLocationFromAddress(destinationPlace);
+                        if (sourceLatLng != null && destinationLatLng != null) {
+                            sheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                            sheetBehavior.setPeekHeight(60);
+                            currentLatLng = sourceLatLng;
+                            desLatLng = destinationLatLng;
+                            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                            builder.include(sourceLatLng);
+                            builder.include(destinationLatLng);
+                            LatLngBounds bounds = builder.build();
+
+                            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 200);
+
+                            mMap.moveCamera(cameraUpdate);
+
+                            drawDirections(sourceLatLng, destinationLatLng, destinationPlace);
+                        }
+                    }
+                }
+            }
+        });
+        return autoCompleteTextView;
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
         // Check for location permissions
-        if (ActivityCompat.checkSelfPermission(requireContext(),
+        if (ActivityCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
             // Enable the "My Location" layer on the map
@@ -271,12 +347,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Current Location")).showInfoWindow();
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f));
 
-                    Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                     try {
                         List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
                         if (!addresses.isEmpty()) {
                             Address address = addresses.get(0);
-//                            sourceAutoCompleteTextView.setText(address.getAddressLine(0));
+                            // sourceAutoCompleteTextView.setText(address.getAddressLine(0));
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -294,9 +370,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     // Check and request location permissions if not granted
     private void checkLocationPermission() {
-        if (ActivityCompat.checkSelfPermission(requireContext(),
+        if (ActivityCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         } else {
             locationPermissionGranted = true;
         }
@@ -310,7 +386,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 locationPermissionGranted = true;
                 // Get the map again after permission is granted
-                SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+                SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.map);
                 mapFragment.getMapAsync(this);
             } else {
@@ -318,72 +394,4 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             }
         }
     }
-
-    public AutoCompleteTextView initSearchTextView(AutoCompleteTextView autoCompleteTextView, int statusCode){
-        autoCompleteTextView.setFocusable(false);
-        autoCompleteTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                List<Place.Field> fieldList = Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME);
-                double distanceInMeters = 5000; // 50 km radius from the center
-
-                LatLngBounds bounds = new LatLngBounds(
-                        new LatLng(latitude - distanceInMeters / 111700, longitude - distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))),
-                        new LatLng(longitude + distanceInMeters / 111700, longitude + distanceInMeters / (111700 * Math.cos(Math.toRadians(latitude)))));
-
-                Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList).setLocationBias(RectangularBounds.newInstance(bounds)).build(getContext());
-                startActivityForResult(intent, statusCode);
-            }
-        });
-        autoCompleteTextView.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (destinationAutoCompleteTextView.getText() != null || sourceAutoCompleteTextView.getText() != null){
-                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
-                    String destinationPlace = String.valueOf((destinationAutoCompleteTextView).getText());
-                    if (!sourcePlace.isEmpty() && !destinationPlace.isEmpty()) {
-                        LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
-                        LatLng destinationLatLng = getLocationFromAddress(destinationPlace);
-                        if (sourceLatLng != null && destinationLatLng != null) {
-                            currentLatLng = sourceLatLng;
-                            desLatLng = destinationLatLng;
-                            LatLngBounds.Builder builder = new LatLngBounds.Builder();
-                            builder.include(sourceLatLng);
-                            builder.include(destinationLatLng);
-                            LatLngBounds bounds = builder.build();
-
-                            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 150);
-                            mMap.moveCamera(cameraUpdate);
-
-                            drawDirections(sourceLatLng, destinationLatLng, destinationPlace);
-                        }
-                    }
-                }
-            }
-        });
-        return autoCompleteTextView;
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-    }
-
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-    }
-
-
 }

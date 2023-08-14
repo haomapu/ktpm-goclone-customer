@@ -1,5 +1,6 @@
 package com.example.ktpm_goclone_customer;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -12,10 +13,20 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.TextView;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.RectangularBounds;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 import com.nex3z.notificationbadge.NotificationBadge;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -35,8 +46,7 @@ public class HomeFragment extends Fragment {
 
     private RecyclerView.Adapter adapter2;
     private RecyclerView recyclerViewList2;
-
-    private MapsFragment mapsFragment;
+    private TextView locationTextView;
 
 
 
@@ -98,6 +108,10 @@ public class HomeFragment extends Fragment {
 //        shopping_badge.setNumber(3);
 
         // This adapter for LOCATIONS
+        User.currentUser = new User();
+        User.currentUser.lat = 10.795801646868847;
+        User.currentUser.lng = 106.72201083209866;
+
         recyclerViewList = view.findViewById(R.id.view);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false);
         recyclerViewList.setLayoutManager(linearLayoutManager);
@@ -123,8 +137,13 @@ public class HomeFragment extends Fragment {
 
         adapter2 = new MarkAdapter(marks);
         recyclerViewList2.setAdapter(adapter2);
-    }
 
+
+        locationTextView= view.findViewById(R.id.locationTextView);
+        locationTextView.setOnClickListener(view1 -> {
+            startActivity(new Intent(getContext(), MapsActivity.class));
+        });
+    }
 
     @Override
     public void onStop() {

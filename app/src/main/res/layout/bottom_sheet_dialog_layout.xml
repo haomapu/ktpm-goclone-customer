@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottom_sheet_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    app:behavior_hideable="true"
+    app:behavior_peekHeight="0dp"
+    android:paddingVertical="7dp"
+    android:background="@drawable/rounded_border"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+        <View
+            android:layout_width="30dp"
+            android:layout_height="3dp"
+            android:background="@color/light_grey"
+            android:layout_marginBottom="10dp"
+            android:layout_centerHorizontal="true"/>
+    </RelativeLayout>
+    <!-- Add your 4-seated car layout here -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/quantum_googgreen200"
+        android:padding="6dp">
+
+        <!-- Replace the placeholder image with your 4-seated car logo -->
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_4_seated_car_logo"
+            android:layout_gravity="center_vertical"/>
+
+        <!-- Replace the placeholder text with your option text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="4 Seated Car Option"
+            android:textSize="16sp"/>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginHorizontal="10dp"
+        android:background="@color/light_grey"
+        android:layout_marginVertical="5dp"/>
+    <!-- Add your 7-seated car layout here -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp">
+
+        <!-- Replace the placeholder image with your 7-seated car logo -->
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_7_seated_car_logo"
+            android:layout_gravity="center_vertical"/>
+
+        <!-- Replace the placeholder text with your option text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="7 Seated Car Option"
+            android:textSize="16sp"/>
+    </LinearLayout>
+
+    <!-- Add any additional content or buttons as needed -->
+    <RelativeLayout
+        android:id="@+id/confirm_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="5dp"
+        android:elevation="3dp"
+        android:padding="10dp"
+        android:background="@drawable/rounded_border_button"
+        android:layout_marginBottom="10dp">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/quantum_googgreen900"
+            android:text="Confirm Booking"
+
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/quantum_googgreen900"
+            android:text="20.000 đ"
+            />
+    </RelativeLayout>
+
+</LinearLayout>
