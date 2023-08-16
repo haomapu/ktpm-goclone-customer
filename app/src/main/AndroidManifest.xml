@@ -19,9 +19,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCCqm6B_WNT1UxOjt0InsHocTxT9QjgeAc" />
-<!--        <activity-->
-<!--            android:name=".MainActivity"-->
-<!--            android:exported="false" />-->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
         <activity
             android:name=".HomeActivity"
             android:exported="false" />
@@ -38,7 +38,7 @@
             android:name=".MapsActivity"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

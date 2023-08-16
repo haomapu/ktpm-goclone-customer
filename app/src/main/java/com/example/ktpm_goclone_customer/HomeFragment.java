@@ -108,9 +108,6 @@ public class HomeFragment extends Fragment {
 //        shopping_badge.setNumber(3);
 
         // This adapter for LOCATIONS
-        User.currentUser = new User();
-        User.currentUser.lat = 10.795801646868847;
-        User.currentUser.lng = 106.72201083209866;
 
         recyclerViewList = view.findViewById(R.id.view);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false);

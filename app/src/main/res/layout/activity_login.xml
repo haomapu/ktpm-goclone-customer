@@ -38,33 +38,48 @@
         android:layout_height="wrap_content"/>
 
     <TextView
-        android:id="@+id/tvNomorHp"
+        android:id="@+id/textViewUsername"
         android:layout_below="@id/tvDescLogin2"
-        android:text="Phone Number"
+        android:text="Email"
         android:layout_marginBottom="4dp"
         android:fontFamily="@font/mmbold"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
     <EditText
-        android:id="@+id/etNomorHP"
+        android:id="@+id/editTextUsername"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/tvNomorHp"
+        android:layout_below="@+id/textViewUsername"
         android:fontFamily="@font/mmregular"
-        android:hint="@string/_62"
-        android:inputType="number"
-        android:maxLength="12" />
+        android:hint="example@gmail.com"
+        android:inputType="textEmailAddress" />
+    <TextView
+        android:id="@+id/textViewPassword"
+        android:layout_below="@+id/editTextUsername"
+        android:text="Password"
+        android:layout_marginBottom="4dp"
+        android:fontFamily="@font/mmbold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/editTextPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewPassword"
+        android:fontFamily="@font/mmregular"
+        android:inputType="textPassword" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/etNomorHP"
+        android:layout_below="@id/editTextPassword"
         android:text="Issue with number?"
         android:textColor="@color/dasar" />
 
     <android.widget.Button
-        android:id="@+id/btnLanjut"
+        android:id="@+id/buttonLogin"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_alignParentBottom="true"

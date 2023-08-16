@@ -1,6 +1,9 @@
 package com.example.ktpm_goclone_customer;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
@@ -15,6 +18,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,6 +34,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -50,12 +56,20 @@ import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
 import com.google.maps.model.Unit;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -75,7 +89,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private BottomSheetBehavior sheetBehavior;
     private Button header_Arrow_Image;
     private CoordinatorLayout coordinatorLayout;
-    private LinearLayout confirm_button;
+    private RelativeLayout confirm_button;
+    private ProgressDialog progressDialog;
+
+    public static boolean checkStatus;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,24 +136,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (currentLatLng == null) {
             setCurrentLocationToSource();
         }
-
-        Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
-                long delayMillis = 20000;
-
-                if (!(websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
-                    LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
-                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
-                    LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
-                    drawDirections(sourceLatLng, latLng, "None");
-                }
-                handler.postDelayed(this, delayMillis);
-            }
-        };
-        handler.post(runnable);
         mBottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
         sheetBehavior = BottomSheetBehavior.from(mBottomSheetLayout);
         sheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
@@ -149,9 +148,131 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
+                long delayMillis = 10000;
 
+                if (!(websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
+                    LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
+                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
+                    LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
+                    BitmapDescriptor driverIcon = BitmapDescriptorFactory.fromResource(R.drawable.driver);
+                    mMap.clear();
+                    if (websocketConnector.driver){
+                        mMap.addMarker(new MarkerOptions().position(latLng).title("Driver").icon(driverIcon));
+                        mMap.addMarker(new MarkerOptions().position(sourceLatLng).title("Your Location")).showInfoWindow();
+                        fetchDirections(latLng, sourceLatLng);
+                    } else {
+                        setCurrentLocationToSource();
+                        drawDirections(currentLatLng, desLatLng, "None");
+                    }
+
+                }
+                handler.postDelayed(this, delayMillis);
+            }
+        };
+        handler.post(runnable);
+        confirm_button = findViewById(R.id.confirm_button);
         confirm_button.setOnClickListener(v -> {
+            ApiCaller apiCaller = ApiCaller.getInstance();
+            SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("MyToken", Context.MODE_PRIVATE);
+            String token = sharedPreferences.getString("token", null);
+            JSONObject jsonObject = new JSONObject();
+            JSONObject sourceLocation = new JSONObject();
+            JSONObject destinationLocation = new JSONObject();
+            try {
+                sourceLocation.put("latitude", currentLatLng.latitude);
+                sourceLocation.put("longitude", currentLatLng.longitude);
+                destinationLocation.put("latitude", desLatLng.latitude);
+                destinationLocation.put("longitude", desLatLng.longitude);
+                jsonObject.put("sourceLocation", sourceLocation);
+                jsonObject.put("destinationLocation", destinationLocation);;
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
 
+            apiCaller.post("/api/user/booking", jsonObject.toString(), new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.e("Hello", e.toString());
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    try {
+                        JSONArray jsonArray = new JSONArray(response.body().string());
+                        checkStatus = true;
+
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                showSpinnerPopup();
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    if (!checkStatus) {
+                                        break;
+                                    }
+                                    JSONObject jsonObject = jsonArray.optJSONObject(i);
+                                    if (jsonObject != null) {
+                                        JSONObject body = new JSONObject();
+                                        try {
+                                            body.put("senderID", User.currentUser.getId());
+                                            body.put("receiverID", jsonObject.getString("id"));
+                                            body.put("latitude", currentLatLng.latitude);
+                                            body.put("longitude", currentLatLng.longitude);
+                                        } catch (JSONException e) {
+                                            throw new RuntimeException(e);
+                                        }
+
+                                        WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
+                                        websocketConnector.send("/app/sendLocation", body.toString());
+                                        // Pause the thread for 10 seconds before the next iteration
+                                        try {
+                                            Thread.sleep(8000); // 10 seconds delay
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+
+                                hideSpinnerPopup();
+
+                            }
+                        }).start();
+
+
+
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+//                        JSONObject jsonObject = new JSONObject(response.body());
+//                        Log.e("Hihi", jsonObject.toString());
+                }
+            }, token);
+        });
+    }
+    private void showSpinnerPopup() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                progressDialog = new ProgressDialog(MapsActivity.this);
+                progressDialog.setMessage("Loading..."); // Set the message for the spinner
+                progressDialog.setCancelable(false); // Prevent users from dismissing the popup
+                progressDialog.show();
+            }
+        });
+    }
+
+    private void hideSpinnerPopup() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (progressDialog != null && progressDialog.isShowing()) {
+                    progressDialog.dismiss();
+                }
+            }
         });
     }
 
@@ -163,8 +284,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             destinationAutoCompleteTextView.setText(place.getAddress());
         } else if (requestCode == 201 && resultCode == RESULT_OK) {
             Place place = Autocomplete.getPlaceFromIntent(data);
-            sourceAutoCompleteTextView.setText(place.getAddress());
-        }
+         }
     }
 
     private void setCurrentLocationToSource() {
