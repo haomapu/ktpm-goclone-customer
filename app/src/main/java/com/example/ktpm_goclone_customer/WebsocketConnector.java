@@ -23,7 +23,7 @@ public class WebsocketConnector {
 
 
     private WebsocketConnector(){
-        stompedClient = new StompedClient.StompedClientBuilder().build("ws://192.168.11.182:8080/ws");
+        stompedClient = new StompedClient.StompedClientBuilder().build("ws://192.168.1.180:8080/ws");
 
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/chat", new StompedListener(){
             @Override
@@ -31,7 +31,6 @@ public class WebsocketConnector {
                 Log.e("Hello", frame.getStompedBody().toString());
             }
         });
-
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/booking", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){

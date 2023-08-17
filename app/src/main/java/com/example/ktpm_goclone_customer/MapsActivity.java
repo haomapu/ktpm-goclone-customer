@@ -210,6 +210,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             @Override
                             public void run() {
                                 showSpinnerPopup();
+                                String message = "None";
                                 for (int i = 0; i < jsonArray.length(); i++) {
                                     if (!checkStatus) {
                                         break;
@@ -217,11 +218,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     JSONObject jsonObject = jsonArray.optJSONObject(i);
                                     if (jsonObject != null) {
                                         JSONObject body = new JSONObject();
+                                        Log.e("Hello/Driver", jsonObject.toString());
                                         try {
                                             body.put("senderID", User.currentUser.getId());
                                             body.put("receiverID", jsonObject.getString("id"));
                                             body.put("latitude", currentLatLng.latitude);
                                             body.put("longitude", currentLatLng.longitude);
+                                            body.put("desLat", desLatLng.latitude);
+                                            body.put("desLng", desLatLng.longitude);
+                                            body.put("message", message);
                                         } catch (JSONException e) {
                                             throw new RuntimeException(e);
                                         }
@@ -358,7 +363,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .await();
 
             if (result != null && result.routes != null && result.routes.length > 0) {
-                DirectionsRoute route = result.routes[0];
+                DirectionsRoute route = result.routes   [0];
                 List<com.google.maps.model.LatLng> decodedPath = route.overviewPolyline.decodePath();
                 int travelTimeSeconds = (int) route.legs[0].duration.inSeconds;
 
