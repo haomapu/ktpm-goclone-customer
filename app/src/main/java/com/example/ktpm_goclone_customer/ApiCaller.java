@@ -4,7 +4,7 @@ import okhttp3.*;
 import java.io.IOException;
 
 public class ApiCaller {
-    private String BASE_URL = "http://192.168.1.180:8080";
+    private String BASE_URL = "https://ktpm-goride.onrender.com";
     private static ApiCaller instance;
     private OkHttpClient client;
 

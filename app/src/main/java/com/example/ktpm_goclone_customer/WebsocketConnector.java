@@ -23,7 +23,7 @@ public class WebsocketConnector {
 
 
     private WebsocketConnector(){
-        stompedClient = new StompedClient.StompedClientBuilder().build("ws://192.168.1.180:8080/ws");
+        stompedClient = new StompedClient.StompedClientBuilder().build("ws://ktpm-goride.onrender.com/ws");
 
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/chat", new StompedListener(){
             @Override
