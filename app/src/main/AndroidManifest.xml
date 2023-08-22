@@ -26,6 +26,9 @@
             android:name=".HomeActivity"
             android:exported="false" />
         <activity
+            android:name=".ProgressActivity"
+            android:exported="false" />
+        <activity
             android:name=".otpActivity"
             android:exported="false" />
         <activity

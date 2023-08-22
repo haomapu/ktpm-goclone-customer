@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -61,8 +62,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -91,8 +94,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CoordinatorLayout coordinatorLayout;
     private RelativeLayout confirm_button;
     private ProgressDialog progressDialog;
+    private TextView priceTV;
 
-    public static boolean checkStatus;
+    private String lastPrice;
+
+    public static volatile boolean checkStatus;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -121,17 +127,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         initSearchTextView(destinationAutoCompleteTextView, 200);
 
         // Set the sourceAutoCompleteTextView to the current location at the first time
-        if (savedInstanceState != null) {
-            // Restore your data from the 'savedInstanceState' bundle
-            latitude = savedInstanceState.getDouble("srcLat");
-            longitude = savedInstanceState.getDouble("srcLng");
-            currentLatLng = new LatLng(latitude, longitude);
-            // Restore other necessary data...
-            Double desLat = savedInstanceState.getDouble("desLat");
-            Double desLng = savedInstanceState.getDouble("desLng");
-            desLatLng = new LatLng(desLat, desLng);
-            drawDirections(currentLatLng, desLatLng, "None");
-        }
 
         if (currentLatLng == null) {
             setCurrentLocationToSource();
@@ -152,19 +147,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
+                WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
                 long delayMillis = 10000;
 
                 if (!(websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
                     LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
-                    String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
-                    LatLng sourceLatLng = getLocationFromAddress(sourcePlace);
                     BitmapDescriptor driverIcon = BitmapDescriptorFactory.fromResource(R.drawable.driver);
                     mMap.clear();
                     if (websocketConnector.driver){
                         mMap.addMarker(new MarkerOptions().position(latLng).title("Driver").icon(driverIcon));
-                        mMap.addMarker(new MarkerOptions().position(sourceLatLng).title("Your Location")).showInfoWindow();
-                        fetchDirections(latLng, sourceLatLng);
+                        mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Your Location")).showInfoWindow();
+                        fetchDirections(latLng, currentLatLng);
                     } else {
                         setCurrentLocationToSource();
                         drawDirections(currentLatLng, desLatLng, "None");
@@ -190,6 +183,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 destinationLocation.put("longitude", desLatLng.longitude);
                 jsonObject.put("sourceLocation", sourceLocation);
                 jsonObject.put("destinationLocation", destinationLocation);;
+//                Intent intent = new Intent(this, ProgressActivity.class);
+////                intent.putExtra("id", jsonObject.getString("senderID"));
+//                startActivity(intent);
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -203,14 +199,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     try {
-                        JSONArray jsonArray = new JSONArray(response.body().string());
+                        JSONObject jsonObject1 = new JSONObject(response.body().string());
+                        JSONArray jsonArray = new JSONArray(jsonObject1.getString("drivers"));
                         checkStatus = true;
 
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
                                 showSpinnerPopup();
-                                String message = "None";
+                                String message = lastPrice;
                                 for (int i = 0; i < jsonArray.length(); i++) {
                                     if (!checkStatus) {
                                         break;
@@ -218,7 +215,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     JSONObject jsonObject = jsonArray.optJSONObject(i);
                                     if (jsonObject != null) {
                                         JSONObject body = new JSONObject();
-                                        Log.e("Hello/Driver", jsonObject.toString());
                                         try {
                                             body.put("senderID", User.currentUser.getId());
                                             body.put("receiverID", jsonObject.getString("id"));
@@ -227,22 +223,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             body.put("desLat", desLatLng.latitude);
                                             body.put("desLng", desLatLng.longitude);
                                             body.put("message", message);
+                                            body.put("bookingId", jsonObject1.getString("bookingId"));
                                         } catch (JSONException e) {
                                             throw new RuntimeException(e);
                                         }
 
-                                        WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
+                                        WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
                                         websocketConnector.send("/app/sendLocation", body.toString());
                                         // Pause the thread for 10 seconds before the next iteration
                                         try {
-                                            Thread.sleep(8000); // 10 seconds delay
+                                            Thread.sleep(15000); // 10 seconds delay
                                         } catch (InterruptedException e) {
                                             e.printStackTrace();
                                         }
                                     }
                                 }
 
-                                hideSpinnerPopup();
+//                                hideSpinnerPopup();
 
                             }
                         }).start();
@@ -263,7 +260,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void run() {
                 progressDialog = new ProgressDialog(MapsActivity.this);
-                progressDialog.setMessage("Loading..."); // Set the message for the spinner
+                progressDialog.setMessage("Finding driver..."); // Set the message for the spinner
                 progressDialog.setCancelable(false); // Prevent users from dismissing the popup
                 progressDialog.show();
             }
@@ -352,6 +349,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Fetch directions and draw route
         fetchDirections(sourceLatLng, destinationLatLng);
     }
+    private boolean isPeakHour() {
+        Calendar calendar = Calendar.getInstance();
+        int currentHour = calendar.get(Calendar.HOUR_OF_DAY); // Get current hour
+
+        return currentHour >= 17 && currentHour < 19; // Check if current hour is between 17 and 19
+    }
+    private String formatPrice(int price) {
+        NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
+        return numberFormat.format(price);
+    }
+
 
     private void fetchDirections(LatLng sourceLatLng, LatLng destinationLatLng) {
         try {
@@ -361,7 +369,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .mode(TravelMode.DRIVING)
                     .units(Unit.METRIC)
                     .await();
-
+            double kilometersTraveled = calculateKilometers(result);
+            boolean isPeakHour = isPeakHour(); // Implement this method to determine if it's peak hour
+            double totalPrice = calculatePrice(kilometersTraveled, isPeakHour);
+            priceTV = mBottomSheetLayout.findViewById(R.id.priceTV);
+            lastPrice = formatPrice((int) totalPrice);
+            priceTV.setText(lastPrice);
             if (result != null && result.routes != null && result.routes.length > 0) {
                 DirectionsRoute route = result.routes   [0];
                 List<com.google.maps.model.LatLng> decodedPath = route.overviewPolyline.decodePath();
@@ -384,6 +397,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
     }
+    private double calculatePrice(double km, boolean isPeakHour) {
+        double basePricePerKm = 7000; // Example base price per kilometer
+        double extraChargePercentage = isPeakHour ? 0.10 : 0.0; // 10% extra charge during peak hours
+        double distanceKm = km;
+
+        // Calculate the price
+        double totalPrice = basePricePerKm * distanceKm * (1 + extraChargePercentage);
+
+        return totalPrice;
+    }
+
+    private double calculateKilometers(DirectionsResult result) {
+        if (result != null && result.routes != null && result.routes.length > 0) {
+            DirectionsRoute route = result.routes[0];
+            double distanceKm = route.legs[0].distance.inMeters * 0.001; // Distance in kilometers
+            return distanceKm;
+        }
+
+        return 0.0; // Default value if no route is found
+    }
+
 
     public AutoCompleteTextView initSearchTextView(AutoCompleteTextView autoCompleteTextView, int statusCode){
         autoCompleteTextView.setFocusable(false);
@@ -436,10 +470,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             LatLngBounds bounds = builder.build();
 
                             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 200);
+                            if (mMap != null){
+                                mMap.moveCamera(cameraUpdate);
 
-                            mMap.moveCamera(cameraUpdate);
+                                drawDirections(sourceLatLng, destinationLatLng, destinationPlace);
 
-                            drawDirections(sourceLatLng, destinationLatLng, destinationPlace);
+                            }
                         }
                     }
                 }
@@ -518,5 +554,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // Handle the case when permission is not granted
             }
         }
+    }
+    private void dismissSpinnerPopup() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (progressDialog != null && progressDialog.isShowing()) {
+                    progressDialog.dismiss();
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        dismissSpinnerPopup();
     }
 }

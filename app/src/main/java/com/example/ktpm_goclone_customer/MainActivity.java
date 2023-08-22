@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
         if (homeFragment == null){
             homeFragment = new HomeFragment();
         }
+        WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
+
         getSupportFragmentManager().beginTransaction().replace(R.id.body_container, homeFragment).commit();
         navigationView.setSelectedItemId(R.id.homeFragment);
         navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -75,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState); // Call super to propagate the instance state to child fragments (including HomeFragment)
         // Save the instance state data for the MainActivity...
-        Log.e("Hello", "Haomapu12");
 
     }
 }

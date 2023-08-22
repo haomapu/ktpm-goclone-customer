@@ -2,10 +2,13 @@ package com.example.ktpm_goclone_customer;
 
 import static com.example.ktpm_goclone_customer.User.currentUser;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.stomped.stomped.client.StompedClient;
 import com.stomped.stomped.component.StompedFrame;
 import com.stomped.stomped.listener.StompedListener;
@@ -20,15 +23,33 @@ public class WebsocketConnector {
     private boolean isWaitingForResponse = false;
     public boolean driver = false;
     private Handler responseHandler; // For handling response timeout
+    private Context context;
+    private Handler handler = new Handler(Looper.getMainLooper());
 
 
-    private WebsocketConnector(){
-        stompedClient = new StompedClient.StompedClientBuilder().build("ws://192.168.1.180:8080/ws");
-
+    private WebsocketConnector(Context context){
+        this.context = context;
+        stompedClient = new StompedClient.StompedClientBuilder().build("ws://ktpm-goride.onrender.com/ws");
+        Log.e("Hello/debug", currentUser.getId());
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/chat", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
                 Log.e("Hello", frame.getStompedBody().toString());
+            }
+        });
+
+        stompedClient.subscribe("/topic/driver/" + currentUser.getId() + "/location", new StompedListener(){
+            @Override
+            public void onNotify(final StompedFrame frame){
+                try {
+                    JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
+                    Log.e("Hello", "Hao Map U123");
+                    ProgressActivity.updateDriverLocation(new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude")));
+
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+
             }
         });
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/booking", new StompedListener(){
@@ -36,7 +57,6 @@ public class WebsocketConnector {
             public void onNotify(final StompedFrame frame){
                 JSONObject jsonObject = null;
                 try {
-                    WebsocketConnector websocketConnector = WebsocketConnector.getInstance();
                     jsonObject = new JSONObject(frame.getStompedBody().toString());
                     websocketConnector.setLatitude(jsonObject.getDouble("latitude"));
                     websocketConnector.setLongitude(jsonObject.getDouble("longitude"));
@@ -47,21 +67,58 @@ public class WebsocketConnector {
                 }
             }
         });
-        stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/pickup", new StompedListener(){
+
+        stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/update", new StompedListener(){
+            @Override
+            public void onNotify(final StompedFrame frame){
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(frame.getStompedBody().toString());
+                    ProgressActivity.updateDriverLocation(new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude")));
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/accept", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
                 driver = false;
                 MapsActivity.checkStatus = false;
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject jsonObject = null;
+                        try {
+                            jsonObject = new JSONObject(frame.getStompedBody().toString());
+                            Intent intent = new Intent(context, ProgressActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            intent.putExtra("id", jsonObject.getString("senderID"));
+                            context.startActivity(intent);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                });
+
+
+
             }
         });
     }
 
-    public static WebsocketConnector getInstance() {
+    public static WebsocketConnector getInstance(Context context) {
         if (websocketConnector == null) {
-            websocketConnector = new WebsocketConnector();
+            websocketConnector = new WebsocketConnector(context);
+        }
+        if (websocketConnector.context == null || websocketConnector.context != context){
+            websocketConnector.context = context;
         }
         return websocketConnector;
     }
+
     public void send(String destination, String body){
         stompedClient.send(destination, body);
     }

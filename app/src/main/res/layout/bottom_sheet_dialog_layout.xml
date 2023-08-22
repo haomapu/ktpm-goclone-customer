@@ -95,13 +95,25 @@
 
             />
         <TextView
+            android:id="@+id/priceTV"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
+            android:layout_toLeftOf="@+id/test"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/quantum_googgreen900"
-            android:text="20.000 đ"
+            android:text="20.000"
+            />
+        <TextView
+            android:id="@+id/test"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="5dp"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/quantum_googgreen900"
+            android:text="đ"
             />
     </RelativeLayout>
 

@@ -4,7 +4,7 @@ import okhttp3.*;
 import java.io.IOException;
 
 public class ApiCaller {
-    private String BASE_URL = "http://192.168.1.180:8080";
+    private String BASE_URL = "https://ktpm-goride.onrender.com";
     private static ApiCaller instance;
     private OkHttpClient client;
 
@@ -39,6 +39,18 @@ public class ApiCaller {
         Call call = client.newCall(request);
         call.enqueue(callback);
     }
+    public void get(String path, Callback callback, String header) {
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(BASE_URL + path)
+                .get();
 
+        if (!header.equalsIgnoreCase("None")) {
+            requestBuilder.addHeader("Authorization", "Bearer " + header);
+        }
+
+        Request request = requestBuilder.build();
+        Call call = client.newCall(request);
+        call.enqueue(callback);
+    }
 }
 
