@@ -30,7 +30,7 @@ public class WebsocketConnector {
     private WebsocketConnector(Context context){
         this.context = context;
         stompedClient = new StompedClient.StompedClientBuilder().build("ws://ktpm-goride.onrender.com/ws");
-        Log.e("Hello/debug", currentUser.getId());
+
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/chat", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
