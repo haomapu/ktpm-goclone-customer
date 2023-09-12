@@ -1,5 +1,7 @@
 package com.example.ktpm_goclone_customer;
 
+import static com.example.ktpm_goclone_customer.User.currentUser;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -7,7 +9,10 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +23,9 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -37,6 +45,8 @@ import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
 import com.google.maps.model.Unit;
+import com.stomped.stomped.component.StompedFrame;
+import com.stomped.stomped.listener.StompedListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,11 +61,18 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+
+
+
 public class ProgressActivity extends AppCompatActivity implements OnMapReadyCallback {
-    static GoogleMap mMap;
+    public GoogleMap mMap;
+
     private static GeoApiContext geoApiContext;
     FusedLocationProviderClient fusedLocationClient;
     private static LatLng currentLatLng;
+    private static LatLng desLatLng;
+    LocationRequest locationRequest;
+    LocationCallback locationCallback;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,6 +96,69 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
         SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("MyToken", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
         ApiCaller apiCaller = ApiCaller.getInstance();
+        Intent intent = getIntent();
+        Log.e("hello", intent.getStringExtra("id").toString());
+
+        currentLatLng = new LatLng(intent.getDoubleExtra("currentLat", 0), intent.getDoubleExtra("currentLng", 0));
+        desLatLng = new LatLng(intent.getDoubleExtra("desLat", 0), intent.getDoubleExtra("desLng", 0));
+        Handler handler = new Handler();
+        WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
+
+//        websocketConnector.stompedClient.unsubscribe("/topic/user/" + currentUser.getId() + "/accept");
+        websocketConnector.stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/accept", new StompedListener(){
+            @Override
+            public void onNotify(final StompedFrame frame){
+//                websocketConnector.stompedClient.unsubscribe("/topic/driver/" + currentUser.getId() + "/location");
+                try {
+                    JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
+                Log.e("helloworld", jsonObject.toString());
+                if (jsonObject.getString("message").equalsIgnoreCase("done")){
+                    Log.e("Hello", "sap xong r");
+                    LocationServices.getFusedLocationProviderClient(ProgressActivity.this).removeLocationUpdates(locationCallback);
+                    Intent intent1 = new Intent(ProgressActivity.this, MainActivity.class);
+                    startActivity(intent1);
+                    finish();
+                    return;
+                }
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        locationRequest = LocationRequest.create();
+                        locationRequest.setInterval(4000); // Interval in milliseconds between updates
+                        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                        // Initialize locationCallback
+                        locationCallback = new LocationCallback() {
+                            @Override
+                            public void onLocationResult(LocationResult locationResult) {
+                                if (locationResult != null) {
+                                    Location location = locationResult.getLastLocation();
+                                    if (location != null) {
+                                        double currentLatitude = location.getLatitude();
+                                        double currentLongitude = location.getLongitude();
+                                        fetchDirections(new LatLng(currentLatitude, currentLongitude), desLatLng);
+                                    }
+                                }
+                            }
+                        };
+
+                        // Request location updates
+                        try {
+                            LocationServices.getFusedLocationProviderClient(ProgressActivity.this)
+                                    .requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+                        } catch (SecurityException e) {
+                            // Handle permission denial
+                        }
+
+
+                    }
+                });
+
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
         apiCaller.get("/api/user/driver/64da5bd8ce2d5e10d8dbfe58", new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -106,12 +186,12 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
 //                // Handle cancel button click
 //            }
 //        });
+
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         // Check for location permissions
         if (ActivityCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -144,24 +224,34 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
                 }
             });
         }
+        WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
+        websocketConnector.stompedClient.subscribe("/topic/driver/" + currentUser.getId() + "/location", new StompedListener(){
+            @Override
+            public void onNotify(final StompedFrame frame){
+                try {
+                    JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
+                    final LatLng newLatLng = new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude"));
+                    final BitmapDescriptor driverIcon = BitmapDescriptorFactory.fromResource(R.drawable.driver);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mMap != null) {
+                                mMap.addMarker(new MarkerOptions().position(newLatLng).title("Driver").icon(driverIcon));
+                                mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Your Location")).showInfoWindow();
+                                fetchDirections(newLatLng, currentLatLng);
+                            }
+                        }
+                    });
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+        });
     }
 
-    public static void updateDriverLocation(LatLng newLatLng){
-        Log.e("Hello/UpdateDriverLocation", "here1");
-        BitmapDescriptor driverIcon = BitmapDescriptorFactory.fromResource(R.drawable.driver);
-        Log.e("Hello/UpdateDriverLocation", "here2");
-        if (mMap != null){
-            mMap.clear();
-            Log.e("Hello/UpdateDriverLocation", "here3");
-            mMap.addMarker(new MarkerOptions().position(newLatLng).title("Driver").icon(driverIcon));
-            Log.e("Hello/UpdateDriverLocation", "here4");
-            mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Your Location")).showInfoWindow();
-            Log.e("Hello/UpdateDriverLocation", "here5");
-            fetchDirections(newLatLng, currentLatLng);
-        }
 
-    }
-    public static void drawDirections(LatLng sourceLatLng, LatLng destinationLatLng, String destinationTitle) {
+    public void drawDirections(LatLng sourceLatLng, LatLng destinationLatLng, String destinationTitle) {
         mMap.clear(); // Clear existing markers and polylines
         mMap.addMarker(new MarkerOptions().position(sourceLatLng).title("Your Location")).showInfoWindow();
         if (!destinationTitle.equalsIgnoreCase("None")){
@@ -174,7 +264,7 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
         fetchDirections(sourceLatLng, destinationLatLng);
     }
 
-    public static void fetchDirections(LatLng sourceLatLng, LatLng destinationLatLng) {
+    public void fetchDirections(LatLng sourceLatLng, LatLng destinationLatLng) {
         try {
             DirectionsResult result = DirectionsApi.newRequest(geoApiContext)
                     .origin(new com.google.maps.model.LatLng(sourceLatLng.latitude, sourceLatLng.longitude))
@@ -205,6 +295,8 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
             e.printStackTrace();
         }
     }
+
+
 
 
 }

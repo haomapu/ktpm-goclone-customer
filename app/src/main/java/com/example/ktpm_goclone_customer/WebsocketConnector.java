@@ -18,12 +18,12 @@ import org.json.JSONObject;
 
 public class WebsocketConnector {
     private static WebsocketConnector websocketConnector;
-    private StompedClient stompedClient;
+    public StompedClient stompedClient;
     private double latitude, longitude;
     private boolean isWaitingForResponse = false;
     public boolean driver = false;
     private Handler responseHandler; // For handling response timeout
-    private Context context;
+    public Context context;
     private Handler handler = new Handler(Looper.getMainLooper());
 
 
@@ -38,20 +38,20 @@ public class WebsocketConnector {
             }
         });
 
-        stompedClient.subscribe("/topic/driver/" + currentUser.getId() + "/location", new StompedListener(){
-            @Override
-            public void onNotify(final StompedFrame frame){
-                try {
-                    JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
-                    Log.e("Hello", "Hao Map U123");
-                    ProgressActivity.updateDriverLocation(new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude")));
-
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
-        });
+//        stompedClient.subscribe("/topic/driver/" + currentUser.getId() + "/location", new StompedListener(){
+//            @Override
+//            public void onNotify(final StompedFrame frame){
+//                try {
+//                    JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
+//                    Log.e("Hello", "Hao Map U123");
+//                    ProgressActivity.updateDriverLocation(new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude")));
+//
+//                } catch (JSONException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//            }
+//        });
         stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/booking", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
@@ -68,45 +68,19 @@ public class WebsocketConnector {
             }
         });
 
-        stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/update", new StompedListener(){
-            @Override
-            public void onNotify(final StompedFrame frame){
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = new JSONObject(frame.getStompedBody().toString());
-                    ProgressActivity.updateDriverLocation(new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude")));
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-        stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/accept", new StompedListener(){
-            @Override
-            public void onNotify(final StompedFrame frame){
-                driver = false;
-                MapsActivity.checkStatus = false;
+//        stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/update", new StompedListener(){
+//            @Override
+//            public void onNotify(final StompedFrame frame){
+//                JSONObject jsonObject = null;
+//                try {
+//                    jsonObject = new JSONObject(frame.getStompedBody().toString());
+//                    ProgressActivity.updateDriverLocation(new LatLng(jsonObject.getDouble("latitude"), jsonObject.getDouble("longitude")));
+//                } catch (JSONException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        });
 
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        JSONObject jsonObject = null;
-                        try {
-                            jsonObject = new JSONObject(frame.getStompedBody().toString());
-                            Intent intent = new Intent(context, ProgressActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            intent.putExtra("id", jsonObject.getString("senderID"));
-                            context.startActivity(intent);
-                        } catch (JSONException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                    }
-                });
-
-
-
-            }
-        });
     }
 
     public static WebsocketConnector getInstance(Context context) {

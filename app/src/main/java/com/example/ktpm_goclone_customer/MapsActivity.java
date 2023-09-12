@@ -1,5 +1,7 @@
 package com.example.ktpm_goclone_customer;
 
+import static com.example.ktpm_goclone_customer.User.currentUser;
+
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -56,6 +58,8 @@ import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
 import com.google.maps.model.Unit;
+import com.stomped.stomped.component.StompedFrame;
+import com.stomped.stomped.listener.StompedListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -144,30 +148,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
-                long delayMillis = 10000;
-
-                if (!(websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
-                    LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
-                    BitmapDescriptor driverIcon = BitmapDescriptorFactory.fromResource(R.drawable.driver);
-                    mMap.clear();
-                    if (websocketConnector.driver){
-                        mMap.addMarker(new MarkerOptions().position(latLng).title("Driver").icon(driverIcon));
-                        mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Your Location")).showInfoWindow();
-                        fetchDirections(latLng, currentLatLng);
-                    } else {
-                        setCurrentLocationToSource();
-                        drawDirections(currentLatLng, desLatLng, "None");
-                    }
-
-                }
-                handler.postDelayed(this, delayMillis);
-            }
-        };
-        handler.post(runnable);
+//        Runnable runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
+//                long delayMillis = 10000;
+//
+//                if (!(websocketConnector.getLatitude() == 0.0 && websocketConnector.getLongitude() == 0.0)) {
+//                    LatLng latLng = new LatLng(websocketConnector.getLatitude(), websocketConnector.getLongitude());
+//                    BitmapDescriptor driverIcon = BitmapDescriptorFactory.fromResource(R.drawable.driver);
+//                    mMap.clear();
+//                    if (websocketConnector.driver){
+//                        mMap.addMarker(new MarkerOptions().position(latLng).title("Driver").icon(driverIcon));
+//                        mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Your Location")).showInfoWindow();
+//                        fetchDirections(latLng, currentLatLng);
+//                    } else {
+//                        setCurrentLocationToSource();
+//                        drawDirections(currentLatLng, desLatLng, "None");
+//                    }
+//
+//                }
+//                handler.postDelayed(this, delayMillis);
+//            }
+//        };
+//        handler.post(runnable);
         confirm_button = findViewById(R.id.confirm_button);
         confirm_button.setOnClickListener(v -> {
             ApiCaller apiCaller = ApiCaller.getInstance();
@@ -254,7 +258,40 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }, token);
         });
-    }
+
+        WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
+        websocketConnector.stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/accept", new StompedListener(){
+        @Override
+        public void onNotify(final StompedFrame frame){
+            websocketConnector.driver = false;
+            MapsActivity.checkStatus = false;
+            Log.e("hello", "hello map");
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(frame.getStompedBody().toString());
+                        Intent intent = new Intent(websocketConnector.context, ProgressActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        intent.putExtra("id", jsonObject.getString("senderID"));
+                        intent.putExtra("currentLat", currentLatLng.latitude);
+                        intent.putExtra("currentLng", currentLatLng.longitude);
+                        intent.putExtra("desLat", desLatLng.latitude);
+                        intent.putExtra("desLng", desLatLng.longitude);
+
+                        websocketConnector.context.startActivity(intent);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                }
+            });
+        }
+    });
+}
+
+
     private void showSpinnerPopup() {
         runOnUiThread(new Runnable() {
             @Override
@@ -286,7 +323,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             destinationAutoCompleteTextView.setText(place.getAddress());
         } else if (requestCode == 201 && resultCode == RESULT_OK) {
             Place place = Autocomplete.getPlaceFromIntent(data);
-         }
+            currentLatLng = place.getLatLng();
+            sourceAutoCompleteTextView.setText(place.getAddress());
+
+        }
     }
 
     private void setCurrentLocationToSource() {
@@ -356,6 +396,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return currentHour >= 17 && currentHour < 19; // Check if current hour is between 17 and 19
     }
     private String formatPrice(int price) {
+        price = price / 1000 * 1000;
         NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
         return numberFormat.format(price);
     }
@@ -453,7 +494,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                    sheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 //                }
                 if (destinationAutoCompleteTextView.getText() != null || sourceAutoCompleteTextView.getText() != null){
-
                     String sourcePlace = String.valueOf(sourceAutoCompleteTextView.getText());
                     String destinationPlace = String.valueOf((destinationAutoCompleteTextView).getText());
                     if (!sourcePlace.isEmpty() && !destinationPlace.isEmpty()) {

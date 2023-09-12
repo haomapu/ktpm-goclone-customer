@@ -40,8 +40,6 @@ public class SplashScreen extends AppCompatActivity {
                     finish();
                 } else {
                     currentUser = new User(username, token, id);
-                    Log.e("Hello/hehe", currentUser.getId());
-
                     startActivity(new Intent(getApplicationContext(), MainActivity.class));
                     finish();
                 }
