@@ -17,6 +17,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
 
     private Button btnLogin;
+    private Button btnRegister;
 
 
     @Override
@@ -42,6 +43,7 @@ public class WelcomeActivity extends AppCompatActivity {
         //Open Button Login Activity
 
         btnLogin = (Button) findViewById(R.id.btnLogin);
+        btnRegister = (Button) findViewById(R.id.btnRegister);
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -50,6 +52,13 @@ public class WelcomeActivity extends AppCompatActivity {
         });
         //Close Button Login Activity
 
+        btnRegister.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(view.getContext(), SignupActivity.class);
+                startActivity(intent);
+            }
+        });
 
     }
 

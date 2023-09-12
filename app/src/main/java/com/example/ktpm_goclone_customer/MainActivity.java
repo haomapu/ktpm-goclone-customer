@@ -6,7 +6,6 @@ import androidx.fragment.app.Fragment;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -15,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
 
     BottomNavigationView navigationView;
     HomeFragment homeFragment;
-    PromoFragment promoFragment;
+    HistoryFragment historyFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,15 +39,13 @@ public class MainActivity extends AppCompatActivity {
                         homeFragment = new HomeFragment();
                     }
                     fragment = homeFragment;
-                } else if (item.getItemId() == R.id.promo_fragment) {
-                    if (promoFragment == null){
-                        promoFragment = new PromoFragment();
+                } else if (item.getItemId() == R.id.history) {
+                    if (historyFragment == null){
+                        historyFragment = new HistoryFragment();
                     }
-                    fragment = promoFragment;
+                    fragment = historyFragment;
                 } else if (item.getItemId() == R.id.profile) {
                     fragment = new ProfileFragment();
-                } else if (item.getItemId() == R.id.chat) {
-                    fragment = new ChatFragment();
                 }
 //                switch (item.getItemId()){
 //                    case R.id.homeFragment:
