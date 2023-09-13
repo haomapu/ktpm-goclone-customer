@@ -104,16 +104,14 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
         Handler handler = new Handler();
         WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
 
-        websocketConnector.stompedClient.unsubscribe("/topic/user/" + currentUser.getId() + "/accept");
+//        websocketConnector.stompedClient.unsubscribe("/topic/user/" + currentUser.getId() + "/accept");
         websocketConnector.stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/accept", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
-//                websocketConnector.stompedClient.unsubscribe("/topic/driver/" + currentUser.getId() + "/location");
+//                websocketConnector.stompedClient.unsubscribe("/topic/user/" + User.currentUser.getId() + "/location");
                 try {
                     JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
-                Log.e("helloworld", jsonObject.toString());
                 if (jsonObject.getString("message").equalsIgnoreCase("done")){
-//                    Log.e("Hello", "sap xong r");
                     LocationServices.getFusedLocationProviderClient(ProgressActivity.this).removeLocationUpdates(locationCallback);
                     Intent intent1 = new Intent(ProgressActivity.this, MainActivity.class);
                     startActivity(intent1);
@@ -130,12 +128,15 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
                         locationCallback = new LocationCallback() {
                             @Override
                             public void onLocationResult(LocationResult locationResult) {
+
                                 if (locationResult != null) {
                                     Location location = locationResult.getLastLocation();
+
                                     if (location != null) {
+                                        mMap.clear();
                                         double currentLatitude = location.getLatitude();
                                         double currentLongitude = location.getLongitude();
-                                        fetchDirections(new LatLng(currentLatitude, currentLongitude), desLatLng);
+                                        fetchDirections(currentLatLng, desLatLng);
                                     }
                                 }
                             }
