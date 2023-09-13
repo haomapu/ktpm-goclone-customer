@@ -104,7 +104,7 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
         Handler handler = new Handler();
         WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
 
-//        websocketConnector.stompedClient.unsubscribe("/topic/user/" + currentUser.getId() + "/accept");
+        websocketConnector.stompedClient.unsubscribe("/topic/user/" + currentUser.getId() + "/accept");
         websocketConnector.stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/accept", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
@@ -113,7 +113,7 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
                     JSONObject jsonObject = new JSONObject(frame.getStompedBody().toString());
                 Log.e("helloworld", jsonObject.toString());
                 if (jsonObject.getString("message").equalsIgnoreCase("done")){
-                    Log.e("Hello", "sap xong r");
+//                    Log.e("Hello", "sap xong r");
                     LocationServices.getFusedLocationProviderClient(ProgressActivity.this).removeLocationUpdates(locationCallback);
                     Intent intent1 = new Intent(ProgressActivity.this, MainActivity.class);
                     startActivity(intent1);
@@ -123,7 +123,6 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-
                         locationRequest = LocationRequest.create();
                         locationRequest.setInterval(4000); // Interval in milliseconds between updates
                         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -225,7 +224,7 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
             });
         }
         WebsocketConnector websocketConnector = WebsocketConnector.getInstance(getApplicationContext());
-        websocketConnector.stompedClient.subscribe("/topic/driver/" + currentUser.getId() + "/location", new StompedListener(){
+        websocketConnector.stompedClient.subscribe("/topic/user/" + currentUser.getId() + "/location", new StompedListener(){
             @Override
             public void onNotify(final StompedFrame frame){
                 try {
