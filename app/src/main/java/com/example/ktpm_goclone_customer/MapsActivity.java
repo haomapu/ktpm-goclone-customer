@@ -99,6 +99,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private RelativeLayout confirm_button;
     private ProgressDialog progressDialog;
     private TextView priceTV;
+    private         LinearLayout fourSeatedLayout, sevenSeatedLayout;
+    private boolean car;
+    public double kilometersTraveled;
 
     private String lastPrice;
 
@@ -172,6 +175,44 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //            }
 //        };
 //        handler.post(runnable);
+
+        fourSeatedLayout = findViewById(R.id.fourSeatedLayout);
+        sevenSeatedLayout = findViewById(R.id.sevenSeatedLayout);
+        // Set an OnClickListener for the four-seated car layout
+        fourSeatedLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Change the background color of the four-seated layout
+                fourSeatedLayout.setBackgroundResource(com.google.android.libraries.places.R.color.quantum_googgreen200);
+                car = false;
+                boolean isPeakHour = isPeakHour(); // Implement this method to determine if it's peak hour
+                double totalPrice = calculatePrice(11000 ,kilometersTraveled, isPeakHour);
+                priceTV = mBottomSheetLayout.findViewById(R.id.priceTV);
+                lastPrice = formatPrice((int) totalPrice);
+                priceTV.setText(lastPrice);
+
+                // Clear the background color of the seven-seated layout
+                sevenSeatedLayout.setBackgroundColor(Color.TRANSPARENT);
+            }
+        });
+
+// Set an OnClickListener for the seven-seated car layout
+        sevenSeatedLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Change the background color of the seven-seated layout
+                sevenSeatedLayout.setBackgroundResource(com.google.android.libraries.places.R.color.quantum_googgreen200);
+                car = true;
+                boolean isPeakHour = isPeakHour(); // Implement this method to determine if it's peak hour
+                double totalPrice = calculatePrice(15000 ,kilometersTraveled, isPeakHour);
+                priceTV = mBottomSheetLayout.findViewById(R.id.priceTV);
+                lastPrice = formatPrice((int) totalPrice);
+                priceTV.setText(lastPrice);
+
+                // Clear the background color of the four-seated layout
+                fourSeatedLayout.setBackgroundColor(Color.TRANSPARENT);
+            }
+        });
         confirm_button = findViewById(R.id.confirm_button);
         confirm_button.setOnClickListener(v -> {
             ApiCaller apiCaller = ApiCaller.getInstance();
@@ -279,7 +320,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         intent.putExtra("currentLng", currentLatLng.longitude);
                         intent.putExtra("desLat", desLatLng.latitude);
                         intent.putExtra("desLng", desLatLng.longitude);
-
                         websocketConnector.context.startActivity(intent);
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
@@ -410,9 +450,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .mode(TravelMode.DRIVING)
                     .units(Unit.METRIC)
                     .await();
-            double kilometersTraveled = calculateKilometers(result);
+            kilometersTraveled = calculateKilometers(result);
             boolean isPeakHour = isPeakHour(); // Implement this method to determine if it's peak hour
-            double totalPrice = calculatePrice(kilometersTraveled, isPeakHour);
+            double totalPrice = calculatePrice(11000 ,kilometersTraveled, isPeakHour);
             priceTV = mBottomSheetLayout.findViewById(R.id.priceTV);
             lastPrice = formatPrice((int) totalPrice);
             priceTV.setText(lastPrice);
@@ -438,9 +478,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
     }
-    private double calculatePrice(double km, boolean isPeakHour) {
-        double basePricePerKm = 7000; // Example base price per kilometer
-        double extraChargePercentage = isPeakHour ? 0.10 : 0.0; // 10% extra charge during peak hours
+    private double calculatePrice(double basePricePerKm, double km, boolean isPeakHour) {
+        double extraChargePercentage = isPeakHour ? 0.20 : 0.0; // 10% extra charge during peak hours
         double distanceKm = km;
 
         // Calculate the price

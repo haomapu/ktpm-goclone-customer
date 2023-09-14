@@ -16,6 +16,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -73,12 +74,16 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
     private static LatLng desLatLng;
     LocationRequest locationRequest;
     LocationCallback locationCallback;
+    public String driverId;
+
+    TextView driverNameTextView, carInfoTextView;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_progress);
         Places.initialize(this, getString(R.string.google_maps_api_key));
-
+        driverNameTextView = findViewById(R.id.driverNameTextView);
+        carInfoTextView = findViewById(R.id.carInfoTextView);
         // Initialize the GeoApiContext
         geoApiContext = new GeoApiContext.Builder()
                 .apiKey(getString(R.string.google_maps_api_key))
@@ -98,7 +103,7 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
         ApiCaller apiCaller = ApiCaller.getInstance();
         Intent intent = getIntent();
         Log.e("hello", intent.getStringExtra("id").toString());
-
+        driverId = intent.getStringExtra("id");
         currentLatLng = new LatLng(intent.getDoubleExtra("currentLat", 0), intent.getDoubleExtra("currentLng", 0));
         desLatLng = new LatLng(intent.getDoubleExtra("desLat", 0), intent.getDoubleExtra("desLng", 0));
         Handler handler = new Handler();
@@ -159,7 +164,7 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
                 }
             }
         });
-        apiCaller.get("/api/user/driver/64da5bd8ce2d5e10d8dbfe58", new Callback() {
+        apiCaller.get("/api/user/driver/" + driverId , new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
 
@@ -168,6 +173,15 @@ public class ProgressActivity extends AppCompatActivity implements OnMapReadyCal
             @Override
             public void onResponse(Call call, Response response) throws IOException {
 //                Log.e("Hello", response.body().string());
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(response.body().string());
+                    driverNameTextView.setText(jsonObject.getString("username"));
+                    carInfoTextView.setText("Car ID: " + jsonObject.getString("licensePlate") + "\nType of Car:" + jsonObject.getString("vehicleType"));
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+
             }
         }, token);
 //        Button backButton = findViewById(R.id.backButton);
